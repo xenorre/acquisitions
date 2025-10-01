@@ -87,6 +87,8 @@ Endpoints (non-exhaustive)
 - POST /api/auth/sign-out → Clear auth cookie
 - GET /api/users → List users (requires DB connectivity)
 
+
+
 CI/config and tooling
 
 - ESLint flat config (eslint.config.js) with @eslint/js recommended rules and project-specific rules; ignores node_modules, coverage, logs, drizzle.
