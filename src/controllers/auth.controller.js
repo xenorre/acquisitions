@@ -10,12 +10,10 @@ export const signUp = async (req, res, next) => {
     const validationResult = signUpSchema.safeParse(req.body);
 
     if (!validationResult.success) {
-      return res
-        .status(400)
-        .json({
-          error: 'Validation failed',
-          details: formatValidationError(validationResult.error),
-        });
+      return res.status(400).json({
+        error: 'Validation failed',
+        details: formatValidationError(validationResult.error),
+      });
     }
 
     const { name, email, password, role } = validationResult.data;
@@ -62,12 +60,10 @@ export const signIn = async (req, res, next) => {
     const validationResult = signInSchema.safeParse(req.body);
 
     if (!validationResult.success) {
-      return res
-        .status(400)
-        .json({
-          error: 'Validation failed',
-          details: formatValidationError(validationResult.error),
-        });
+      return res.status(400).json({
+        error: 'Validation failed',
+        details: formatValidationError(validationResult.error),
+      });
     }
 
     const { email, password } = validationResult.data;
@@ -114,7 +110,7 @@ export const signOut = async (req, res, next) => {
     // Get the current user's email from token for logging (optional)
     const token = cookies.get(req, 'token');
     let userEmail = 'unknown';
-    
+
     if (token) {
       try {
         const decoded = jwttoken.verify(token);

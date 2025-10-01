@@ -59,7 +59,9 @@ export const updateUser = async (id, updates) => {
 
     const allowed = ['name', 'email', 'role', 'password'];
     const payload = Object.fromEntries(
-      Object.entries(updates || {}).filter(([k, v]) => allowed.includes(k) && v !== undefined)
+      Object.entries(updates || {}).filter(
+        ([k, v]) => allowed.includes(k) && v !== undefined
+      )
     );
 
     if ('password' in payload) {
@@ -116,17 +118,14 @@ export const deleteUser = async id => {
       throw new Error('User not found');
     }
 
-    const [deleted] = await db
-      .delete(users)
-      .where(eq(users.id, id))
-      .returning({
-        id: users.id,
-        email: users.email,
-        name: users.name,
-        role: users.role,
-        createdAt: users.createdAt,
-        updatedAt: users.updatedAt,
-      });
+    const [deleted] = await db.delete(users).where(eq(users.id, id)).returning({
+      id: users.id,
+      email: users.email,
+      name: users.name,
+      role: users.role,
+      createdAt: users.createdAt,
+      updatedAt: users.updatedAt,
+    });
 
     return deleted;
   } catch (e) {
