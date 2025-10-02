@@ -1,94 +1,211 @@
-# README.md
+# Acquisitions API
 
-Project type: Node.js (ESM) Express API with Drizzle ORM (PostgreSQL via Neon), Dockerized for dev/prod.
+[![Tests](https://github.com/xenorre/acquisitions/actions/workflows/tests.yml/badge.svg?branch=main)](https://github.com/xenorre/acquisitions/actions/workflows/tests.yml)
+[![Lint and Format](https://github.com/xenorre/acquisitions/actions/workflows/lint-and-format.yml/badge.svg?branch=main)](https://github.com/xenorre/acquisitions/actions/workflows/lint-and-format.yml)
+[![Docker Build and Push](https://github.com/xenorre/acquisitions/actions/workflows/docker-build-and-push.yml/badge.svg?branch=main)](https://github.com/xenorre/acquisitions/actions/workflows/docker-build-and-push.yml)
+![Node](https://img.shields.io/badge/node-20.x-339933?logo=node.js&logoColor=white)
+![License: ISC](https://img.shields.io/badge/license-ISC-blue.svg)
 
-Common commands
+A Node.js (ESM) Express API for the Acquisitions system, using Drizzle ORM with PostgreSQL (Neon/Neon Local). The project is containerized for both development and production, with CI workflows for linting, formatting, testing, and Docker image publishing.
 
-- Install dependencies
-  - npm install
-- Run locally (hot reload)
-  - npm run dev
-- Run in production mode (locally)
-  - npm start
-- Lint and format
-  - Lint: npm run lint
-  - Lint (auto-fix): npm run lint:fix
-  - Format write: npm run format
-  - Format check: npm run format:check
-- Database (Drizzle)
-  - Generate SQL from models: npm run db:generate
-  - Apply migrations: npm run db:migrate
-  - Generate + migrate: npm run db:deploy
-  - Explore schema: npm run db:studio
-- Docker (compose)
-  - Dev (requires .env.development): npm run dev:docker
-  - Prod (requires .env.production): npm run prod:docker
+- Repository: https://github.com/xenorre/acquisitions
+- Issues: https://github.com/xenorre/acquisitions/issues
 
-Notes on testing
+## Table of contents
+- Overview
+- Features
+- Tech stack
+- Quick start
+  - Local (Node)
+  - Docker (development)
+  - Docker (production)
+- Configuration (env vars)
+- NPM scripts
+- API endpoints
+- Architecture
+- Development (lint/format/test)
+- CI/CD
+- License
 
-- No test runner or test scripts are configured in package.json. Running a single test is not applicable until a test framework is added.
+## Overview
+This service exposes REST endpoints for authentication and users, with secure middleware, structured logging, and health checks suitable for orchestration. It uses modern ESM, import aliases, and a typed data layer via Drizzle ORM.
 
-High-level architecture
+## Features
+- Express 5 with ESM and import aliases (#config/*, #routes/*, #services/*, etc.)
+- Security middleware: helmet, cors, cookie-parser, rate limiting and shielding via Arcjet
+- Auth flows with Zod validation, bcrypt password hashing, JWT signing, and secure cookies
+- PostgreSQL access with Drizzle ORM (Neon HTTP client); migrations via drizzle-kit
+- Health endpoint and container healthchecks
+- Winston structured logging with morgan integration
+- Dockerized workflows for dev and prod
+- GitHub Actions for lint/format, tests, and Docker image publishing
 
-- Module system and path aliases
-  - ESM enabled via "type": "module".
-  - package.json defines Node "imports" aliases used across the codebase: #config/_, #middleware/_, #models/_, #routes/_, #controllers/_, #services/_, #utils/_, #validations/_.
-  - Prefer these aliases over relative paths when creating or moving files to keep imports consistent.
-- Application bootstrap
-  - src/index.js loads environment (dotenv) and starts the server by importing src/server.js.
-  - src/server.js reads PORT (default 3000) and calls app.listen.
-  - src/app.js constructs the Express app, registers middleware, routes, and health endpoints, then exports the configured app.
-- Middleware
-  - helmet, cors, express.json/urlencoded, cookie-parser for request handling and security hardening.
-  - morgan logs to Winston via a custom stream.
-  - Custom security middleware (src/middleware/security.middleware.js) integrates Arcjet for bot detection, shielding, and per-role rate limiting (guest/user/admin) using sliding windows. Denials respond with 403 and structured JSON.
-- Routing and request flow
-  - Routes: /api/auth (src/routes/auth.routes.js), /api/users (src/routes/users.routes.js), plus root / and /health.
-  - Controllers validate input with Zod (src/validations/auth.validation.js), format validation errors via utils (formatValidationError), then delegate to services.
-  - Services encapsulate business logic and DB access:
-    - auth.service.js: user creation with bcrypt hashing, uniqueness checks via Drizzle; authentication with bcrypt compare; returns user sans password.
-    - users.service.js: reads users via typed Drizzle selects.
-  - Utilities:
-    - utils/jwt.js wraps jsonwebtoken (sign/verify) with configurable expiry.
-    - utils/cookies.js centralizes secure cookie options and set/clear helpers.
-    - utils/format.js formats Zod errors for API responses.
-- Data layer (Drizzle + Neon)
-  - src/config/database.js initializes Neon HTTP client and Drizzle. In development, Neon local overrides (neonConfig) are applied.
-  - Schema defined in src/models/\*.js (e.g., users table with unique email, timestamps).
-  - Drizzle config (drizzle.config.js) points schema to src/models and outputs SQL migrations to drizzle/.
-  - Migrations are generated (db:generate) and applied (db:migrate); a sample migration exists under drizzle/.
-- Logging
-  - Winston logger (src/config/logger.js) with JSON logs, timestamps, and error stacks; writes to logs/ files and console in non-production.
-  - morgan (combined) piped into Winston.
-- Health and observability
-  - GET /health returns JSON with status, timestamp, and formatted uptime. Used by Docker healthchecks.
-  - GET /api returns a simple status message.
-- Containerization and local dev
-  - Dockerfile defines multi-stage builds (development, build, production) on Node 20-alpine. Healthchecks query /health.
-  - docker-compose.dev.yml: runs Neon Local (5432) and the app (3000) with volumes for hot reload. Requires .env.development.
-  - docker-compose.prod.yml: runs the production target with healthchecks and hardened container options. Requires .env.production.
+## Tech stack
+- Runtime: Node.js 20 (ESM)
+- Framework: Express 5
+- Validation: Zod
+- Auth: jsonwebtoken, bcrypt, secure cookies
+- ORM: Drizzle ORM + @neondatabase/serverless
+- Logging: Winston + morgan
+- Tooling: ESLint (flat config) + Prettier
+- CI: GitHub Actions (lint/format, tests, Docker build & push)
 
-Environment
+## Quick start
 
-- Required/used variables (via dotenv and Docker compose files):
-  - DATABASE_URL (PostgreSQL connection, Neon or Neon Local)
-  - ARCJET_KEY (Arcjet service key)
-  - JWT_SECRET, JWT_EXPIRES_IN
-  - LOG_LEVEL
-  - NODE_ENV, PORT
+### Local (Node)
+Prerequisites: Node 20+, a reachable PostgreSQL instance (Neon or local), and a valid DATABASE_URL.
 
-Endpoints (non-exhaustive)
+```bash path=null start=null
+# Install deps
+npm install
 
+# Configure env
+# Create .env.development with the variables from the Configuration section
+
+# (Optional) Generate and run migrations — requires DATABASE_URL to be reachable
+npm run db:generate
+npm run db:migrate
+
+# Start in watch mode
+npm run dev
+
+# App will be available at http://localhost:3000
+# Healthcheck at http://localhost:3000/health
+```
+
+### Docker (development)
+This brings up Neon Local and the app with hot reload.
+
+```bash path=null start=null
+# Requires .env.development
+npm run dev:docker
+# App: http://localhost:3000  |  Neon Local: 5432
+```
+
+### Docker (production)
+Builds and runs the hardened production container.
+
+```bash path=null start=null
+# Requires .env.production
+npm run prod:docker
+# App: http://localhost:3000
+```
+
+## Configuration (env vars)
+Set via dotenv locally and docker-compose in containers.
+
+- DATABASE_URL: PostgreSQL connection string (Neon or Neon Local)
+- ARCJET_KEY: Arcjet service key
+- JWT_SECRET: Secret used to sign JWTs
+- JWT_EXPIRES_IN: e.g., 1d, 12h
+- LOG_LEVEL: e.g., info, debug, warn
+- NODE_ENV: development | test | production
+- PORT: default 3000
+
+Example (.env.development):
+
+```dotenv path=null start=null
+DATABASE_URL=postgres://neon:neon@localhost:5432/postgres
+ARCJET_KEY=your_arcjet_key
+JWT_SECRET=dev_secret
+JWT_EXPIRES_IN=1d
+LOG_LEVEL=debug
+NODE_ENV=development
+PORT=3000
+```
+
+## NPM scripts
+```bash path=null start=null
+# App lifecycle
+npm run dev           # Node watch mode
+npm start             # Production mode
+
+# Lint & format
+npm run lint
+npm run lint:fix
+npm run format
+npm run format:check
+
+# Database (Drizzle)
+npm run db:generate   # Generate SQL from schema
+npm run db:migrate    # Apply migrations
+npm run db:deploy     # Generate + migrate
+npm run db:studio     # Explore schema
+
+# Docker
+npm run dev:docker
+npm run prod:docker
+
+# Tests
+npm test              # Runs Jest (see CI for skip behavior if none exist)
+```
+
+## API endpoints (non-exhaustive)
 - GET / → Hello from API!
-- GET /health → JSON health payload (used by container healthchecks)
+- GET /health → Health JSON (used by healthchecks)
 - GET /api → Basic API status
 - POST /api/auth/sign-up → Create user (validates with Zod, sets auth cookie)
 - POST /api/auth/sign-in → Authenticate user (validates with Zod, sets auth cookie)
 - POST /api/auth/sign-out → Clear auth cookie
 - GET /api/users → List users (requires DB connectivity)
 
-CI/config and tooling
+## Architecture
+- Module system and aliases
+  - ESM via "type": "module"
+  - Node import aliases defined in package.json: #config/*, #middleware/*, #models/*, #routes/*, #controllers/*, #services/*, #utils/*, #validations/*
+- Bootstrap
+  - src/index.js: loads env and starts server (imports src/server.js)
+  - src/server.js: reads PORT (default 3000), calls app.listen
+  - src/app.js: builds Express app (middleware, routes, /health)
+- Middleware
+  - helmet, cors, express.json/urlencoded, cookie-parser
+  - morgan → Winston stream
+  - Arcjet-based shielding and per-role rate limiting (guest/user/admin)
+- Data layer (Drizzle + Neon)
+  - src/config/database.js: Neon HTTP client + Drizzle
+  - Schema in src/models/*.js; drizzle.config.js outputs to drizzle/
+- Logging
+  - Winston with JSON format, timestamps, error stacks; console in non-prod
+- Health & observability
+  - GET /health for liveness
+- Containerization
+  - Multi-stage Dockerfile (dev/build/prod) on Node 20-alpine
+  - docker-compose.dev.yml: Neon Local + app with hot reload
+  - docker-compose.prod.yml: production target + healthchecks and security options
 
-- ESLint flat config (eslint.config.js) with @eslint/js recommended rules and project-specific rules; ignores node_modules, coverage, logs, drizzle.
-- Prettier configured via .prettierrc.
-- .gitignore excludes node_modules, logs, .env files, IDE artifacts, and Neon local artifacts.
+Example project layout:
+```text path=null start=null
+.
+├─ src/
+│  ├─ app.js
+│  ├─ server.js
+│  ├─ index.js
+│  ├─ config/
+│  ├─ middleware/
+│  ├─ models/
+│  ├─ routes/
+│  ├─ controllers/
+│  ├─ services/
+│  └─ utils/ validations/
+├─ drizzle/
+├─ drizzle.config.js
+├─ Dockerfile
+├─ docker-compose.dev.yml
+├─ docker-compose.prod.yml
+├─ package.json
+└─ README.md
+```
+
+## Development
+- Lint: npm run lint (auto-fix: npm run lint:fix)
+- Format: npm run format / npm run format:check
+- Tests: npm test (Jest + Supertest). CI will skip gracefully if no tests are present, otherwise runs with coverage.
+
+## CI/CD
+GitHub Actions workflows:
+- Lint and Format: .github/workflows/lint-and-format.yml
+- Tests: .github/workflows/tests.yml (Node 20, coverage artifacts)
+- Docker Build and Push: .github/workflows/docker-build-and-push.yml (multi-platform images, tags, OCI labels)
+
+## License
+ISC. See the license declaration in package.json.

@@ -4,3 +4,4 @@ logs
 .env
 .idea.neon_local/
 .idea
+coverage/*
