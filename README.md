@@ -12,6 +12,7 @@ A Node.js (ESM) Express API for the Acquisitions system, using Drizzle ORM with 
 - Issues: https://github.com/xenorre/acquisitions/issues
 
 ## Table of contents
+
 - Overview
 - Features
 - Tech stack
@@ -28,10 +29,12 @@ A Node.js (ESM) Express API for the Acquisitions system, using Drizzle ORM with 
 - License
 
 ## Overview
+
 This service exposes REST endpoints for authentication and users, with secure middleware, structured logging, and health checks suitable for orchestration. It uses modern ESM, import aliases, and a typed data layer via Drizzle ORM.
 
 ## Features
-- Express 5 with ESM and import aliases (#config/*, #routes/*, #services/*, etc.)
+
+- Express 5 with ESM and import aliases (#config/_, #routes/_, #services/\*, etc.)
 - Security middleware: helmet, cors, cookie-parser, rate limiting and shielding via Arcjet
 - Auth flows with Zod validation, bcrypt password hashing, JWT signing, and secure cookies
 - PostgreSQL access with Drizzle ORM (Neon HTTP client); migrations via drizzle-kit
@@ -41,6 +44,7 @@ This service exposes REST endpoints for authentication and users, with secure mi
 - GitHub Actions for lint/format, tests, and Docker image publishing
 
 ## Tech stack
+
 - Runtime: Node.js 20 (ESM)
 - Framework: Express 5
 - Validation: Zod
@@ -53,6 +57,7 @@ This service exposes REST endpoints for authentication and users, with secure mi
 ## Quick start
 
 ### Local (Node)
+
 Prerequisites: Node 20+, a reachable PostgreSQL instance (Neon or local), and a valid DATABASE_URL.
 
 ```bash path=null start=null
@@ -74,6 +79,7 @@ npm run dev
 ```
 
 ### Docker (development)
+
 This brings up Neon Local and the app with hot reload.
 
 ```bash path=null start=null
@@ -83,6 +89,7 @@ npm run dev:docker
 ```
 
 ### Docker (production)
+
 Builds and runs the hardened production container.
 
 ```bash path=null start=null
@@ -92,6 +99,7 @@ npm run prod:docker
 ```
 
 ## Configuration (env vars)
+
 Set via dotenv locally and docker-compose in containers.
 
 - DATABASE_URL: PostgreSQL connection string (Neon or Neon Local)
@@ -115,6 +123,7 @@ PORT=3000
 ```
 
 ## NPM scripts
+
 ```bash path=null start=null
 # App lifecycle
 npm run dev           # Node watch mode
@@ -141,6 +150,7 @@ npm test              # Runs Jest (see CI for skip behavior if none exist)
 ```
 
 ## API endpoints (non-exhaustive)
+
 - GET / → Hello from API!
 - GET /health → Health JSON (used by healthchecks)
 - GET /api → Basic API status
@@ -150,9 +160,10 @@ npm test              # Runs Jest (see CI for skip behavior if none exist)
 - GET /api/users → List users (requires DB connectivity)
 
 ## Architecture
+
 - Module system and aliases
   - ESM via "type": "module"
-  - Node import aliases defined in package.json: #config/*, #middleware/*, #models/*, #routes/*, #controllers/*, #services/*, #utils/*, #validations/*
+  - Node import aliases defined in package.json: #config/_, #middleware/_, #models/_, #routes/_, #controllers/_, #services/_, #utils/_, #validations/_
 - Bootstrap
   - src/index.js: loads env and starts server (imports src/server.js)
   - src/server.js: reads PORT (default 3000), calls app.listen
@@ -163,7 +174,7 @@ npm test              # Runs Jest (see CI for skip behavior if none exist)
   - Arcjet-based shielding and per-role rate limiting (guest/user/admin)
 - Data layer (Drizzle + Neon)
   - src/config/database.js: Neon HTTP client + Drizzle
-  - Schema in src/models/*.js; drizzle.config.js outputs to drizzle/
+  - Schema in src/models/\*.js; drizzle.config.js outputs to drizzle/
 - Logging
   - Winston with JSON format, timestamps, error stacks; console in non-prod
 - Health & observability
@@ -174,6 +185,7 @@ npm test              # Runs Jest (see CI for skip behavior if none exist)
   - docker-compose.prod.yml: production target + healthchecks and security options
 
 Example project layout:
+
 ```text path=null start=null
 .
 ├─ src/
@@ -197,15 +209,19 @@ Example project layout:
 ```
 
 ## Development
+
 - Lint: npm run lint (auto-fix: npm run lint:fix)
 - Format: npm run format / npm run format:check
 - Tests: npm test (Jest + Supertest). CI will skip gracefully if no tests are present, otherwise runs with coverage.
 
 ## CI/CD
+
 GitHub Actions workflows:
+
 - Lint and Format: .github/workflows/lint-and-format.yml
 - Tests: .github/workflows/tests.yml (Node 20, coverage artifacts)
 - Docker Build and Push: .github/workflows/docker-build-and-push.yml (multi-platform images, tags, OCI labels)
 
 ## License
+
 ISC. See the license declaration in package.json.
